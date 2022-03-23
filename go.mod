@@ -1,4 +1,4 @@
-module go-base
+module github.com/BabySid/go-base
 
 go 1.17
 
