@@ -1,2 +1,2 @@
-# go-base
+# gobase
 Common utilities library

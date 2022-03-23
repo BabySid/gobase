@@ -1,4 +1,4 @@
-package base
+package gobase
 
 import (
 	"github.com/shirou/gopsutil/v3/cpu"

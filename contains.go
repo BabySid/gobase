@@ -1,4 +1,4 @@
-package base
+package gobase
 
 func ContainsString(array []string, val string) int {
 	for i, item := range array {

@@ -1,4 +1,4 @@
-package base
+package gobase
 
 import (
 	"database/sql"
