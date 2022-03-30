@@ -39,7 +39,7 @@ func CompressJson(js string) (string, error) {
 	return string(dst), nil
 }
 
-func PrettyJson(js string, indent string) (string, error) {
+func PrettyPrintJson(js string, indent string) (string, error) {
 	var v interface{}
 	err := json.Unmarshal([]byte(js), &v)
 	if err != nil {
