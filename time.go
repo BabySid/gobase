@@ -16,10 +16,18 @@ func FormatDate() string {
 	return FormatTimeStampWithFormat(time.Now().Unix(), DateFormat)
 }
 
+func FormatDateTime() string {
+	return FormatTimeStampWithFormat(time.Now().Unix(), DateTimeFormat)
+}
+
 func FormatTimeStamp(ts int64) string {
 	return FormatTimeStampWithFormat(ts, DateTimeFormat)
 }
 
 func FormatTimeStampWithFormat(ts int64, format string) string {
 	return time.Unix(ts, 0).Format(format)
+}
+
+func FormatTimeStampMilliWithFormat(ts int64, format string) string {
+	return time.UnixMilli(ts).Format(format)
 }
