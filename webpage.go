@@ -36,7 +36,7 @@ func GetWebPageTitle(url string) (string, error) {
 	}
 
 	title := doc.Find("title").Text()
-	if title != "" {
+	if title == "" {
 		doc.Find("meta").Each(func(i int, s *goquery.Selection) {
 			if t, e := s.Attr("property"); e {
 				if t == "og:title" || t == "twitter:title" {
