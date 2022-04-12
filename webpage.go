@@ -1,13 +1,23 @@
 package gobase
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
+	"time"
 )
 
 func GetWebPageTitle(url string) (string, error) {
-	resp, err := http.Get(url)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+
+	client := &http.Client{Transport: tr, Timeout: 3 * time.Second}
+
+	resp, err := client.Get(url)
 
 	if err != nil {
 		return "", genWebPageError(err)
@@ -26,6 +36,17 @@ func GetWebPageTitle(url string) (string, error) {
 	}
 
 	title := doc.Find("title").Text()
+	if title != "" {
+		doc.Find("meta").Each(func(i int, s *goquery.Selection) {
+			if t, e := s.Attr("property"); e {
+				if t == "og:title" || t == "twitter:title" {
+					if t, _ = s.Attr("content"); t != "" {
+						title = t
+					}
+				}
+			}
+		})
+	}
 	return title, nil
 }
 
