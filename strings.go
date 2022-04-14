@@ -5,8 +5,8 @@ import (
 	"unicode/utf8"
 )
 
-func CutUTF8(str string, start int, end int) string {
-	if end <= utf8.RuneCountInString(str) {
+func CutUTF8(str string, start int, end int, suffix string) string {
+	if end < utf8.RuneCountInString(str) {
 		aft := ""
 		i := 0
 		for _, v := range str {
@@ -19,7 +19,7 @@ func CutUTF8(str string, start int, end int) string {
 			i++
 		}
 
-		return aft
+		return aft + suffix
 	}
 	return str
 }
