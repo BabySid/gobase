@@ -41,3 +41,9 @@ func (s *Set) Exist(v interface{}) bool {
 
 	return false
 }
+
+func (s *Set) Foreach(call func(v interface{})) {
+	for k, _ := range s.container {
+		call(k)
+	}
+}
