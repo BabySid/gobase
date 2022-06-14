@@ -58,6 +58,20 @@ func (q *Queue) PopFront() interface{} {
 	return nil
 }
 
+func (q *Queue) Front() interface{} {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	return q.container.Front()
+}
+
+func (q *Queue) Back() interface{} {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	return q.container.Back()
+}
+
 func (q *Queue) Size() int {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
