@@ -62,14 +62,22 @@ func (q *Queue) Front() interface{} {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
-	return q.container.Front()
+	item := q.container.Front()
+	if item != nil {
+		return item.Value
+	}
+	return nil
 }
 
 func (q *Queue) Back() interface{} {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 
-	return q.container.Back()
+	item := q.container.Back()
+	if item != nil {
+		return item.Value
+	}
+	return nil
 }
 
 func (q *Queue) Size() int {
