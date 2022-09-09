@@ -12,7 +12,7 @@ type SignalSet struct {
 	handles sync.Map
 }
 
-func NewSignalHandles() *SignalSet {
+func NewSignalSet() *SignalSet {
 	s := &SignalSet{handles: sync.Map{}}
 	go s.run()
 	return s
