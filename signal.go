@@ -23,8 +23,9 @@ func (s *SignalSet) Register(sig os.Signal, handler SignalHandler) {
 }
 
 func (s *SignalSet) run() {
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c)
+
 	for sig := range c {
 		if h, ok := s.handles.Load(sig); ok {
 			h.(SignalHandler)(sig)
