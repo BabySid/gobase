@@ -5,6 +5,7 @@ import (
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
+	"net"
 	"time"
 )
 
@@ -31,4 +32,30 @@ func GetDiskPartitions() []string {
 	}
 
 	return rs
+}
+
+func GetLocalIP() (string, error) {
+	iFaces, e := net.Interfaces()
+	if e != nil {
+		return "", e
+	}
+
+	for _, face := range iFaces {
+		addrs, err := face.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+				if ip.IsGlobalUnicast() {
+					return ip.String(), nil
+				}
+			}
+		}
+	}
+
+	return "", nil
 }
