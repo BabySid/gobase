@@ -34,6 +34,17 @@ func GetDiskPartitions() []string {
 	return rs
 }
 
+func GetDiskPartitionUsedPercent() map[string]float64 {
+	ps, _ := disk.Partitions(false)
+	rs := make(map[string]float64)
+	for i := range ps {
+		usage, _ := disk.Usage(ps[i].Mountpoint)
+		rs[ps[i].Mountpoint] = usage.UsedPercent
+	}
+
+	return rs
+}
+
 func GetLocalIP() (string, error) {
 	iFaces, e := net.Interfaces()
 	if e != nil {
