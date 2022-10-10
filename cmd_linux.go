@@ -1,6 +1,9 @@
 package gobase
 
-import "os/exec"
+import (
+	"os/exec"
+	"syscall"
+)
 
 func SetChildrenProcessDetached(c *exec.Cmd) {
 	c.SysProcAttr = &syscall.SysProcAttr{}
