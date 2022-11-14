@@ -42,8 +42,10 @@ func (s *Set) Exist(v interface{}) bool {
 	return false
 }
 
-func (s *Set) Foreach(call func(v interface{})) {
+func (s *Set) Traversal(call func(v interface{}) error) {
 	for k, _ := range s.container {
-		call(k)
+		if err := call(k); err != nil {
+			break
+		}
 	}
 }
