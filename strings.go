@@ -2,6 +2,7 @@ package gobase
 
 import (
 	"encoding/json"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -52,4 +53,18 @@ func PrettyPrintJson(js string, indent string) (string, error) {
 	}
 
 	return string(dst), nil
+}
+
+func SplitAndTrimSpace(s string, sep string) []string {
+	rs := strings.Split(s, sep)
+
+	tmp := make([]string, 0)
+	for _, v := range rs {
+		m := strings.TrimSpace(v)
+		if m != "" {
+			tmp = append(tmp, m)
+		}
+	}
+
+	return tmp
 }
