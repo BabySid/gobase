@@ -1,6 +1,6 @@
 package gobase
 
-func RemoveItemFromSlice(src []interface{}, elem interface{}) []interface{} {
+func RemoveItemFromSlice[T comparable](src []T, elem T) []T {
 	i := 0
 	for _, v := range src {
 		if v != elem {
