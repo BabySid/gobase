@@ -6,8 +6,8 @@ import (
 )
 
 func main() {
-	arr := []string{"1", "2", "3", "4", "5"}
+	arr := []interface{}{"1", "2", "3", "4", "5"}
 
-	rs := gobase.RemoveItemFromSlice(arr, "3")
+	rs := gobase.RemoveAnyFromSlice(arr, "3")
 	fmt.Println(rs)
 }
