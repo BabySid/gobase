@@ -3,10 +3,12 @@ package gobase
 import (
 	"fmt"
 	"github.com/robfig/cron/v3"
+	"sync"
 )
 
 type Scheduler struct {
-	c *cron.Cron
+	c    *cron.Cron
+	lock sync.Mutex
 	// name -> id
 	jobs map[string]cron.EntryID
 }
@@ -30,6 +32,9 @@ func NewScheduler() *Scheduler {
 }
 
 func (s *Scheduler) AddJob(name string, spec string, cmd ScheJob) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	if _, ok := s.jobs[name]; ok {
 		return fmt.Errorf("%s exist", name)
 	}
@@ -41,6 +46,21 @@ func (s *Scheduler) AddJob(name string, spec string, cmd ScheJob) error {
 
 	s.jobs[name] = id
 	return nil
+}
+
+func (s *Scheduler) DelJob(name string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	var id cron.EntryID
+	id, ok := s.jobs[name]
+	if !ok {
+		return
+	}
+
+	s.c.Remove(id)
+
+	delete(s.jobs, name)
 }
 
 func (s *Scheduler) Start() {
