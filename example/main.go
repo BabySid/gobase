@@ -6,10 +6,8 @@ import (
 )
 
 func main() {
-	file, fun, line := gobase.GetFileInfoOfCaller(gobase.CurCaller)
-	fmt.Println(file, gobase.GetShortFuncName(fun), line)
-}
-func run() {
-	file, fun, line := gobase.GetFileInfoOfCaller(gobase.CurCaller)
-	fmt.Println(file, gobase.GetShortFuncName(fun), line)
+	arr := []interface{}{"1", "2", "3", "4", "5"}
+
+	rs := gobase.RemoveAnyFromSlice(arr, "3")
+	fmt.Println(rs)
 }
