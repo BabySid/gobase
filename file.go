@@ -1,9 +1,12 @@
 package gobase
 
 import (
+	"bufio"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 func PathExists(path string) (bool, error) {
@@ -25,4 +28,30 @@ func WriteFile(filename string, data []byte, perm fs.FileMode) error {
 	}
 
 	return os.Rename(tmp, filename)
+}
+
+func ReadLine(filename string, handle func(string) error) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	var data string
+	for {
+		data, err = r.ReadString('\n')
+		data = strings.TrimSpace(data)
+		if err = handle(data); err != nil {
+			return err
+		}
+
+		if err != nil && err == io.EOF {
+			return nil
+		}
+
+		if err != nil {
+			return err
+		}
+	}
 }
