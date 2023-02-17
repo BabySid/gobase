@@ -42,8 +42,9 @@ func ReadLine(filename string, handle func(string) error) error {
 	for {
 		data, err = r.ReadString('\n')
 		data = strings.TrimSpace(data)
-		if err = handle(data); err != nil {
-			return err
+
+		if e := handle(data); e != nil {
+			return e
 		}
 
 		if err != nil && err == io.EOF {
