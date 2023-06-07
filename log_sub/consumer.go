@@ -49,6 +49,7 @@ type Consumer struct {
 	curDateTimeLogMeta dateTimeLog
 	file               *os.File
 	reader             *bufio.Reader
+	nxtFileName        string
 
 	watcher gobase.FileWatcher
 }
@@ -130,6 +131,7 @@ func (c *Consumer) startConsume() {
 				c.sendLine("", err)
 				return
 			}
+
 		} else {
 			c.sendLine(line, err)
 			return
@@ -175,11 +177,19 @@ func (c *Consumer) readLine() (string, error) {
 }
 
 func (c *Consumer) setFileWatcher() {
-	c.watcher = gobase.NewPollingFileWatcher(c.file.Name())
+	c.watcher = gobase.NewPollingFileWatcher(c.file.Name(), c.nxtFileName)
 }
 
 func (c *Consumer) openReader() {
 	c.reader = bufio.NewReaderSize(c.file, maxReadSize)
+}
+
+func (c *Consumer) setNextFile() {
+	multi := time.Duration(1)
+	if c.curDateTimeLogMeta.step == daily {
+		multi = 24
+	}
+	c.nxtFileName = c.curDateTimeLogMeta.cur.Add(time.Hour * multi).Format(c.DateTimeLogLayout.Layout)
 }
 
 func (c *Consumer) openFile() error {
@@ -213,6 +223,7 @@ func (c *Consumer) openFile() error {
 	}
 
 	c.file = file
+	c.setNextFile()
 
 	c.setFileWatcher()
 	c.openReader()
@@ -235,6 +246,8 @@ func (c *Consumer) waitFileChanges() error {
 	}
 
 	select {
+	case <-events.Created:
+		return c.openFile()
 	case <-events.Modified:
 		return nil
 	case <-events.Deleted:

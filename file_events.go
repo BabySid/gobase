@@ -1,6 +1,7 @@
 package gobase
 
 type FileEvents struct {
+	Created   chan bool
 	Modified  chan bool
 	Truncated chan bool
 	Deleted   chan bool // or renames
@@ -8,19 +9,27 @@ type FileEvents struct {
 
 func NewFileEvents() *FileEvents {
 	return &FileEvents{
-		make(chan bool, 1), make(chan bool, 1), make(chan bool, 1)}
+		Created:   make(chan bool, 1),
+		Modified:  make(chan bool, 1),
+		Truncated: make(chan bool, 1),
+		Deleted:   make(chan bool, 1),
+	}
 }
 
-func (fc *FileEvents) NotifyModified() {
-	sendOnlyIfEmpty(fc.Modified)
+func (fe *FileEvents) NotifyCreated() {
+	sendOnlyIfEmpty(fe.Created)
 }
 
-func (fc *FileEvents) NotifyTruncated() {
-	sendOnlyIfEmpty(fc.Truncated)
+func (fe *FileEvents) NotifyModified() {
+	sendOnlyIfEmpty(fe.Modified)
 }
 
-func (fc *FileEvents) NotifyDeleted() {
-	sendOnlyIfEmpty(fc.Deleted)
+func (fe *FileEvents) NotifyTruncated() {
+	sendOnlyIfEmpty(fe.Truncated)
+}
+
+func (fe *FileEvents) NotifyDeleted() {
+	sendOnlyIfEmpty(fe.Deleted)
 }
 
 // sendOnlyIfEmpty sends on a bool channel only if the channel has no

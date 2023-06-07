@@ -12,21 +12,22 @@ type FileWatcher interface {
 var _ FileWatcher = (*PollingFileWatcher)(nil)
 
 type PollingFileWatcher struct {
-	Filename string
-	Size     int64
+	curFile string
+	newFile string
+	Size    int64
 }
 
 const (
 	pollInterval = 200 * time.Millisecond
 )
 
-func NewPollingFileWatcher(filename string) *PollingFileWatcher {
-	fw := &PollingFileWatcher{filename, 0}
+func NewPollingFileWatcher(curFile string, newFile string) *PollingFileWatcher {
+	fw := &PollingFileWatcher{curFile: curFile, newFile: newFile, Size: 0}
 	return fw
 }
 
 func (p *PollingFileWatcher) ChangeEvents(size int64) (*FileEvents, error) {
-	info, err := os.Stat(p.Filename)
+	info, err := os.Stat(p.curFile)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +41,7 @@ func (p *PollingFileWatcher) ChangeEvents(size int64) (*FileEvents, error) {
 		for {
 			time.Sleep(pollInterval)
 
-			latest, err := os.Stat(p.Filename)
+			latest, err := os.Stat(p.curFile)
 			if err != nil {
 				if os.IsNotExist(err) {
 					events.NotifyDeleted()
@@ -65,6 +66,14 @@ func (p *PollingFileWatcher) ChangeEvents(size int64) (*FileEvents, error) {
 			}
 
 			prevSize = p.Size
+
+			_, err = os.Stat(p.newFile)
+			if err != nil {
+				if os.IsExist(err) {
+					events.NotifyCreated()
+					return
+				}
+			}
 		}
 	}()
 
