@@ -191,7 +191,9 @@ func (c *Consumer) setNextFile() {
 	if c.curDateTimeLogMeta.step == daily {
 		multi = 24
 	}
-	c.nxtFileName = c.curDateTimeLogMeta.cur.Add(time.Hour * multi).Format(c.DateTimeLogLayout.Layout)
+	nxt := c.curDateTimeLogMeta.cur.Add(time.Hour * multi)
+	c.nxtFileName = nxt.Format(c.DateTimeLogLayout.Layout)
+	c.curDateTimeLogMeta.cur = nxt
 }
 
 func (c *Consumer) openFile() error {

@@ -1,13 +1,20 @@
 package main
 
 import (
-	"fmt"
-	"github.com/BabySid/gobase"
+	"github.com/BabySid/gobase/log_sub"
 )
 
 func main() {
-	arr := []interface{}{"1", "2", "3", "4", "5"}
+	_, err := log_sub.NewConsumer(log_sub.Config{
+		Location: &log_sub.SeekInfo{
+			FileName: "../log/2023060612.log",
+			Offset:   0,
+			Whence:   0,
+		},
+		DateTimeLogLayout: &log_sub.DateTimeLayout{Layout: "../log/2006010215.log"},
+	})
 
-	rs := gobase.RemoveAnyFromSlice(arr, "3")
-	fmt.Println(rs)
+	if err != nil {
+		panic(err)
+	}
 }
