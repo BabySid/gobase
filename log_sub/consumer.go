@@ -247,12 +247,16 @@ func (c *Consumer) waitFileChanges() error {
 
 	select {
 	case <-events.Created:
+		c.logger.Debug("got events.Created")
 		return c.openFile()
 	case <-events.Modified:
+		c.logger.Debug("got events.Modified")
 		return nil
 	case <-events.Deleted:
+		c.logger.Debug("got events.Deleted")
 		return c.openFile()
 	case <-events.Truncated:
+		c.logger.Debug("got events.Truncated")
 		return c.openFile()
 	}
 }

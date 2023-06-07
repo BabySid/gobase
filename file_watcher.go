@@ -68,11 +68,9 @@ func (p *PollingFileWatcher) ChangeEvents(size int64) (*FileEvents, error) {
 			prevSize = p.Size
 
 			_, err = os.Stat(p.newFile)
-			if err != nil {
-				if os.IsExist(err) {
-					events.NotifyCreated()
-					return
-				}
+			if err == nil {
+				events.NotifyCreated()
+				return
 			}
 		}
 	}()
