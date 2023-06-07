@@ -59,6 +59,10 @@ const (
 )
 
 func NewConsumer(config Config) (*Consumer, error) {
+	if config.logger == nil {
+		config.logger = &gobase.StdErrLogger{}
+	}
+
 	if config.DateTimeLogLayout == nil {
 		return nil, errors.New("invalid config")
 	}
