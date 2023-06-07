@@ -100,7 +100,7 @@ func NewConsumer(config Config) (*Consumer, error) {
 		watcher: nil,
 	}
 
-	c.logger.Infof("Consumer.curDateTimeLogMeta: %+v", meta)
+	c.logger.Infof("Consumer.curDateTimeLogMeta: cur=%s, step=%d", gobase.FormatTimeStamp(meta.cur.Unix()), step)
 
 	go c.startConsume()
 
@@ -217,7 +217,7 @@ func (c *Consumer) openFile() error {
 	c.setFileWatcher()
 	c.openReader()
 
-	c.logger.Infof("openFile(%s) successful", fName)
+	c.logger.Infof("openFile(%s) successful, nextFile=%s", c.file.Name(), c.nxtFileName)
 	return nil
 }
 
