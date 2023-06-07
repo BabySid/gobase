@@ -63,20 +63,26 @@ func NewConsumer(config Config) (*Consumer, error) {
 		return nil, errors.New("invalid config")
 	}
 
+	now := time.Now()
+	if config.Location == nil {
+		config.Location = &SeekInfo{
+			FileName: now.Format(config.DateTimeLogLayout.Layout),
+			Offset:   0,
+			Whence:   0,
+		}
+	}
 	step := verifyLogStep(config.DateTimeLogLayout.Layout, config.Location.FileName)
 
 	meta := dateTimeLog{
-		cur:  time.Now(),
+		cur:  now,
 		step: step,
 	}
 
-	if config.Location != nil {
-		startTime, err := time.Parse(config.DateTimeLogLayout.Layout, config.Location.FileName)
-		if err != nil {
-			return nil, err
-		}
-		meta.cur = startTime
+	startTime, err := time.Parse(config.DateTimeLogLayout.Layout, config.Location.FileName)
+	if err != nil {
+		return nil, err
 	}
+	meta.cur = startTime
 
 	c := Consumer{
 		Lines:  make(chan *Line, defaultBufSize),
