@@ -100,6 +100,8 @@ func NewConsumer(config Config) (*Consumer, error) {
 		watcher: nil,
 	}
 
+	c.logger.Infof("Consumer.curDateTimeLogMeta: %+v", meta)
+
 	go c.startConsume()
 
 	return &c, nil
@@ -197,20 +199,7 @@ func (c *Consumer) openFile() error {
 	if c.file == nil { // first time
 		fName = c.curDateTimeLogMeta.cur.Format(c.DateTimeLogLayout.Layout)
 	} else {
-		now := time.Now()
-		multi := time.Duration(1)
-		if c.curDateTimeLogMeta.step == daily {
-			multi = 24
-		}
-		next := c.curDateTimeLogMeta.cur.Add(time.Hour * multi)
-		if next.After(now) {
-			fName = next.Format(c.DateTimeLogLayout.Layout)
-			c.curDateTimeLogMeta.cur = next
-		}
-	}
-
-	if fName == "" {
-		return nil
+		fName = c.nxtFileName
 	}
 
 	file, err := os.Open(fName)
@@ -228,7 +217,7 @@ func (c *Consumer) openFile() error {
 	c.setFileWatcher()
 	c.openReader()
 
-	c.logger.Infof("openFile(%s)", fName)
+	c.logger.Infof("openFile(%s) successful", fName)
 	return nil
 }
 
