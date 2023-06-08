@@ -34,7 +34,7 @@ type Config struct {
 	Location          *SeekInfo // if nil it will consumer log from cur time
 	DateTimeLogLayout *DateTimeLayout
 
-	logger gobase.Logger
+	Logger gobase.Logger
 }
 
 const (
@@ -65,8 +65,8 @@ const (
 )
 
 func NewConsumer(config Config) (*Consumer, error) {
-	if config.logger == nil {
-		config.logger = &gobase.StdErrLogger{}
+	if config.Logger == nil {
+		config.Logger = &gobase.StdErrLogger{}
 	}
 
 	if config.DateTimeLogLayout == nil {
@@ -105,7 +105,7 @@ func NewConsumer(config Config) (*Consumer, error) {
 		watcher: nil,
 	}
 
-	c.logger.Infof("Consumer.curDateTimeLogMeta: cur=%s, step=%d", gobase.FormatTimeStamp(meta.cur.Unix()), step)
+	c.Logger.Infof("Consumer.curDateTimeLogMeta: cur=%s, step=%d", gobase.FormatTimeStamp(meta.cur.Unix()), step)
 
 	go c.startConsume()
 
@@ -224,7 +224,7 @@ func (c *Consumer) openFile() error {
 	c.setFileWatcher()
 	c.openReader()
 
-	c.logger.Infof("openFile(%s) successful, nextFile=%s", c.file.Name(), c.nxtFileName)
+	c.Logger.Infof("openFile(%s) successful, nextFile=%s", c.file.Name(), c.nxtFileName)
 	return nil
 }
 
@@ -243,16 +243,16 @@ func (c *Consumer) waitFileChanges() error {
 
 	select {
 	case <-events.Created:
-		c.logger.Debug("got events.Created")
+		c.Logger.Debug("got events.Created")
 		return c.openFile()
 	case <-events.Modified:
-		c.logger.Debug("got events.Modified")
+		c.Logger.Debug("got events.Modified")
 		return nil
 	case <-events.Deleted:
-		c.logger.Debug("got events.Deleted")
+		c.Logger.Debug("got events.Deleted")
 		return c.openFile()
 	case <-events.Truncated:
-		c.logger.Debug("got events.Truncated")
+		c.Logger.Debug("got events.Truncated")
 		return c.openFile()
 	}
 }
