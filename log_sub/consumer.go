@@ -10,9 +10,14 @@ import (
 	"time"
 )
 
+type LineMeta struct {
+	FileName string
+}
+
 type Line struct {
 	Text string
 	Err  error
+	Meta LineMeta
 }
 
 type SeekInfo struct {
