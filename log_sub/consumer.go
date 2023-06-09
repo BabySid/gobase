@@ -234,19 +234,23 @@ func (c *Consumer) openFile(fName string) error {
 }
 
 func (c *Consumer) waitNxtFile() (nxtFile, error) {
-	newFiles := c.getNextFile()
-
 	size, err := c.file.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return nxtFile{}, err
 	}
 
 	for {
+		time.Sleep(time.Second)
+
+		newFiles := c.getNextFile()
+		c.Logger.Infof("getNextFile %v", newFiles)
+
 		var newFile nxtFile
 		for _, f := range newFiles {
 			_, err := os.Stat(f.Name)
 			if err == nil {
 				newFile = f
+				c.Logger.Infof("newFile(%s) from getNextFile exist", newFile)
 				break
 			}
 		}
@@ -267,8 +271,6 @@ func (c *Consumer) waitNxtFile() (nxtFile, error) {
 		if newFile.Name != "" {
 			return newFile, nil
 		}
-
-		time.Sleep(time.Millisecond * 200)
 	}
 }
 
