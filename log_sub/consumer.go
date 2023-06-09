@@ -139,6 +139,7 @@ func (c *Consumer) startConsume() {
 				fileArr[i] = f.Name
 			}
 
+			c.Logger.Debugf("read until EOF. curFile=%s nextFile=%d", c.file.Name(), len(fileArr))
 			nxt, err := c.waitFileChanges(fileArr)
 			if err != nil {
 				c.sendLine("", err)
