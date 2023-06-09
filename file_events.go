@@ -1,35 +1,35 @@
 package gobase
 
-type FileEvents struct {
-	Created   chan bool
-	Modified  chan bool
-	Truncated chan bool
-	Deleted   chan bool // or renames
+type FileEvents[T any] struct {
+	Created   chan T
+	Modified  chan T
+	Truncated chan T
+	Deleted   chan T // or renames
 }
 
-func NewFileEvents() *FileEvents {
-	return &FileEvents{
-		Created:   make(chan bool, 1),
-		Modified:  make(chan bool, 1),
-		Truncated: make(chan bool, 1),
-		Deleted:   make(chan bool, 1),
+func NewFileEvents[T any]() *FileEvents[T] {
+	return &FileEvents[T]{
+		Created:   make(chan T, 1),
+		Modified:  make(chan T, 1),
+		Truncated: make(chan T, 1),
+		Deleted:   make(chan T, 1),
 	}
 }
 
-func (fe *FileEvents) NotifyCreated() {
-	sendOnlyIfEmpty(fe.Created)
+func (fe *FileEvents[T]) NotifyCreated(meta T) {
+	sendOnlyIfEmpty(fe.Created, meta)
 }
 
-func (fe *FileEvents) NotifyModified() {
-	sendOnlyIfEmpty(fe.Modified)
+func (fe *FileEvents[T]) NotifyModified(meta T) {
+	sendOnlyIfEmpty(fe.Modified, meta)
 }
 
-func (fe *FileEvents) NotifyTruncated() {
-	sendOnlyIfEmpty(fe.Truncated)
+func (fe *FileEvents[T]) NotifyTruncated(meta T) {
+	sendOnlyIfEmpty(fe.Truncated, meta)
 }
 
-func (fe *FileEvents) NotifyDeleted() {
-	sendOnlyIfEmpty(fe.Deleted)
+func (fe *FileEvents[T]) NotifyDeleted(meta T) {
+	sendOnlyIfEmpty(fe.Deleted, meta)
 }
 
 // sendOnlyIfEmpty sends on a bool channel only if the channel has no
@@ -37,9 +37,9 @@ func (fe *FileEvents) NotifyDeleted() {
 // can be used to notify other goroutines if and only if they are
 // looking for it (i.e., subsequent notifications can be compressed
 // into one).
-func sendOnlyIfEmpty(ch chan bool) {
+func sendOnlyIfEmpty[T any](ch chan T, meta T) {
 	select {
-	case ch <- true:
+	case ch <- meta:
 	default:
 	}
 }

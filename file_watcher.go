@@ -6,74 +6,83 @@ import (
 )
 
 type FileWatcher interface {
-	ChangeEvents(size int64) (*FileEvents, error)
+	ChangeEvents(curFile string, size int64, newFiles []string) *FileEvents[EventMeta]
+}
+
+type EventMeta struct {
+	NxtFile string
 }
 
 var _ FileWatcher = (*PollingFileWatcher)(nil)
 
 type PollingFileWatcher struct {
-	curFile string
-	newFile string
-	Size    int64
 }
 
 const (
 	pollInterval = 200 * time.Millisecond
 )
 
-func NewPollingFileWatcher(curFile string, newFile string) *PollingFileWatcher {
-	fw := &PollingFileWatcher{curFile: curFile, newFile: newFile, Size: 0}
+func NewPollingFileWatcher() *PollingFileWatcher {
+	fw := &PollingFileWatcher{}
 	return fw
 }
 
-func (p *PollingFileWatcher) ChangeEvents(size int64) (*FileEvents, error) {
-	info, err := os.Stat(p.curFile)
-	if err != nil {
-		return nil, err
-	}
-
-	p.Size = size
-
-	events := NewFileEvents()
+func (p *PollingFileWatcher) ChangeEvents(curFile string, size int64, newFiles []string) *FileEvents[EventMeta] {
+	events := NewFileEvents[EventMeta]()
 
 	go func() {
-		prevSize := p.Size
+		prevSize := size
+
+		curExist := true
+		info, err := os.Stat(curFile)
+		if err != nil {
+			curExist = false
+		}
+
 		for {
 			time.Sleep(pollInterval)
 
-			latest, err := os.Stat(p.curFile)
-			if err != nil {
-				if os.IsNotExist(err) {
-					events.NotifyDeleted()
-					return
+			newFile := ""
+			for _, f := range newFiles {
+				_, err := os.Stat(f)
+				if err == nil {
+					newFile = f
+					break
 				}
 			}
 
-			if !os.SameFile(info, latest) {
-				events.NotifyDeleted()
+			latest, err := os.Stat(curFile)
+			if err != nil {
+				if os.IsNotExist(err) {
+					if newFile != "" {
+						events.NotifyDeleted(EventMeta{NxtFile: newFile})
+						return
+					}
+					continue
+				}
+			}
+
+			if curExist && !os.SameFile(info, latest) {
+				if newFile != "" {
+					events.NotifyDeleted(EventMeta{NxtFile: newFile})
+					return
+				}
+				continue
+			}
+
+			if prevSize > 0 && prevSize > latest.Size() {
+				events.NotifyTruncated(EventMeta{NxtFile: curFile})
 				return
 			}
 
-			p.Size = latest.Size()
-			if prevSize > 0 && prevSize > p.Size {
-				events.NotifyTruncated()
+			if prevSize > 0 && prevSize < latest.Size() {
+				events.NotifyModified(EventMeta{NxtFile: curFile})
 				return
 			}
 
-			if prevSize > 0 && prevSize < p.Size {
-				events.NotifyModified()
-				return
-			}
-
-			prevSize = p.Size
-
-			_, err = os.Stat(p.newFile)
-			if err == nil {
-				events.NotifyCreated()
-				return
-			}
+			prevSize = latest.Size()
 		}
 	}()
 
-	return events, nil
+	return events
 }

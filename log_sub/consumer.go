@@ -54,7 +54,6 @@ type Consumer struct {
 	curDateTimeLogMeta dateTimeLog
 	file               *os.File
 	reader             *bufio.Reader
-	nxtFileName        string
 
 	watcher gobase.FileWatcher
 }
@@ -113,7 +112,7 @@ func NewConsumer(config Config) (*Consumer, error) {
 }
 
 func (c *Consumer) startConsume() {
-	err := c.openFile()
+	err := c.openFile(c.curDateTimeLogMeta.cur.Format(c.DateTimeLogLayout.Layout))
 	gobase.True(err == nil)
 
 	if c.Location != nil {
@@ -133,10 +132,26 @@ func (c *Consumer) startConsume() {
 				c.sendLine(line, nil)
 			}
 
-			err = c.waitFileChanges()
+			newFiles := c.getNextFile()
+			fileArr := make([]string, len(newFiles))
+
+			for i, f := range newFiles {
+				fileArr[i] = f.Name
+			}
+
+			nxt, err := c.waitFileChanges(fileArr)
 			if err != nil {
 				c.sendLine("", err)
 				return
+			}
+
+			c.Logger.Infof("waitFileChanges. nextFile=%s", nxt)
+			for _, f := range newFiles {
+				if f.Name == nxt {
+					err = c.openFile(f.Name)
+					gobase.True(err == nil)
+					c.curDateTimeLogMeta.cur = f.Ts
+				}
 			}
 
 		} else {
@@ -184,31 +199,40 @@ func (c *Consumer) readLine() (string, error) {
 }
 
 func (c *Consumer) setFileWatcher() {
-	c.watcher = gobase.NewPollingFileWatcher(c.file.Name(), c.nxtFileName)
+	c.watcher = gobase.NewPollingFileWatcher()
 }
 
 func (c *Consumer) openReader() {
 	c.reader = bufio.NewReaderSize(c.file, maxReadSize)
 }
 
-func (c *Consumer) setNextFile() {
+type nxtFile struct {
+	Name string
+	Ts   time.Time
+}
+
+func (c *Consumer) getNextFile() []nxtFile {
 	multi := time.Duration(1)
 	if c.curDateTimeLogMeta.step == daily {
 		multi = 24
 	}
-	nxt := c.curDateTimeLogMeta.cur.Add(time.Hour * multi)
-	c.nxtFileName = nxt.Format(c.DateTimeLogLayout.Layout)
-	c.curDateTimeLogMeta.cur = nxt
-}
 
-func (c *Consumer) openFile() error {
-	fName := ""
-	if c.file == nil { // first time
-		fName = c.curDateTimeLogMeta.cur.Format(c.DateTimeLogLayout.Layout)
-	} else {
-		fName = c.nxtFileName
+	f := make([]nxtFile, 0)
+
+	nxt := c.curDateTimeLogMeta.cur
+	for {
+		nxt = nxt.Add(time.Hour * multi)
+		if nxt.After(time.Now()) {
+			break
+		}
+		name := nxt.Format(c.DateTimeLogLayout.Layout)
+		f = append(f, nxtFile{Name: name, Ts: nxt})
 	}
 
+	return f
+}
+
+func (c *Consumer) openFile(fName string) error {
 	file, err := os.Open(fName)
 	if err != nil {
 		return err
@@ -219,41 +243,40 @@ func (c *Consumer) openFile() error {
 	}
 
 	c.file = file
-	c.setNextFile()
 
-	c.setFileWatcher()
 	c.openReader()
 
-	c.Logger.Infof("openFile(%s) successful, nextFile=%s", c.file.Name(), c.nxtFileName)
+	c.Logger.Infof("openFile(%s) successful", c.file.Name())
 	return nil
 }
 
 // waitFileChanges return next or continue to read from current file
 // but now, we only support next
-func (c *Consumer) waitFileChanges() error {
+func (c *Consumer) waitFileChanges(newFiles []string) (string, error) {
 	pos, err := c.file.Seek(0, io.SeekCurrent)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	events, err := c.watcher.ChangeEvents(pos)
-	if err != nil {
-		return err
+	if c.watcher == nil {
+		c.setFileWatcher()
 	}
+
+	events := c.watcher.ChangeEvents(c.file.Name(), pos, newFiles)
 
 	select {
-	case <-events.Created:
-		c.Logger.Debug("got events.Created")
-		return c.openFile()
-	case <-events.Modified:
-		c.Logger.Debug("got events.Modified")
-		return nil
-	case <-events.Deleted:
-		c.Logger.Debug("got events.Deleted")
-		return c.openFile()
-	case <-events.Truncated:
-		c.Logger.Debug("got events.Truncated")
-		return c.openFile()
+	case data := <-events.Created:
+		c.Logger.Debug("got events.Created %+v", data)
+		return data.NxtFile, nil
+	case data := <-events.Modified:
+		c.Logger.Debug("got events.Modified %+v", data)
+		return data.NxtFile, nil
+	case data := <-events.Deleted:
+		c.Logger.Debug("got events.Deleted %+v", data)
+		return data.NxtFile, nil
+	case data := <-events.Truncated:
+		c.Logger.Debug("got events.Truncated %+v", data)
+		return data.NxtFile, nil
 	}
 }
 
