@@ -85,7 +85,7 @@ func NewConsumer(config Config) (*Consumer, error) {
 		step: step,
 	}
 
-	startTime, err := time.Parse(config.DateTimeLogLayout.Layout, config.Location.FileName)
+	startTime, err := time.ParseInLocation(config.DateTimeLogLayout.Layout, config.Location.FileName, time.Local)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +243,7 @@ func (c *Consumer) waitNxtFile() (nxtFile, error) {
 		time.Sleep(time.Second)
 
 		newFiles := c.getNextFile()
-		c.Logger.Infof("getNextFile %v", newFiles)
+		c.Logger.Infof("getNextFile %v", gobase.AbbreviateArray(newFiles))
 
 		var newFile nxtFile
 		for _, f := range newFiles {

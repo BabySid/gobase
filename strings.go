@@ -2,6 +2,7 @@ package gobase
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"unicode/utf8"
 )
@@ -67,4 +68,17 @@ func SplitAndTrimSpace(s string, sep string) []string {
 	}
 
 	return tmp
+}
+
+func AbbreviateArray[T any](arr []T) string {
+	switch len(arr) {
+	case 0:
+		return "[]"
+	case 1:
+		return fmt.Sprintf("[%+v]", arr[0])
+	case 2:
+		return fmt.Sprintf("[%+v,%+v]", arr[0], arr[1])
+	default:
+		return fmt.Sprintf("[%+v,...,%+v]", arr[0], arr[len(arr)-1])
+	}
 }
