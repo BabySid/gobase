@@ -168,7 +168,7 @@ func (c *Consumer) Tell() (*SeekInfo, error) {
 }
 
 func (c *Consumer) sendLine(line string, err error) {
-	c.Lines <- &Line{Text: line, Err: err}
+	c.Lines <- &Line{Text: line, Err: err, Meta: LineMeta{FileName: c.file.Name()}}
 }
 
 func (c *Consumer) readLine() (string, error) {
