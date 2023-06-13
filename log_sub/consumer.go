@@ -261,7 +261,7 @@ func (c *Consumer) waitNxtFile() (nxtFile, error) {
 			return nxtFile{}, err
 		}
 
-		if size > 0 && size < latest.Size() {
+		if size >= 0 && size < latest.Size() {
 			return nxtFile{
 				Name: c.file.Name(),
 				Ts:   c.curDateTimeLogMeta.cur,
