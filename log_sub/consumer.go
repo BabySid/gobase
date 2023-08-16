@@ -6,6 +6,7 @@ import (
 	"github.com/BabySid/gobase"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -27,7 +28,16 @@ type SeekInfo struct {
 }
 
 type DateTimeLayout struct {
-	Layout string // e.g. 2006010215.log
+	FilePath string // e.g. /path/to/20230815.log
+	Layout   string // e.g. 20060102.log
+}
+
+func (dt *DateTimeLayout) formatFile(t time.Time) string {
+	return t.Format(filepath.Join(dt.filePath(), dt.Layout))
+}
+
+func (dt *DateTimeLayout) filePath() string {
+	return filepath.Dir(dt.FilePath)
 }
 
 type Config struct {
@@ -73,19 +83,20 @@ func NewConsumer(config Config) (*Consumer, error) {
 	now := time.Now()
 	if config.Location == nil {
 		config.Location = &SeekInfo{
-			FileName: now.Format(config.DateTimeLogLayout.Layout),
+			FileName: config.DateTimeLogLayout.formatFile(now),
 			Offset:   0,
 			Whence:   0,
 		}
 	}
-	step := verifyLogStep(config.DateTimeLogLayout.Layout, config.Location.FileName)
+	step := verifyLogStep(*config.DateTimeLogLayout, config.Location.FileName)
 
 	meta := dateTimeLog{
 		cur:  now,
 		step: step,
 	}
 
-	startTime, err := time.ParseInLocation(config.DateTimeLogLayout.Layout, config.Location.FileName, time.Local)
+	fName := filepath.Base(config.Location.FileName)
+	startTime, err := time.ParseInLocation(config.DateTimeLogLayout.Layout, fName, time.Local)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +119,10 @@ func NewConsumer(config Config) (*Consumer, error) {
 }
 
 func (c *Consumer) startConsume() {
-	file := c.curDateTimeLogMeta.cur.Format(c.DateTimeLogLayout.Layout)
+	file := filepath.Join(
+		c.DateTimeLogLayout.filePath(),
+		c.curDateTimeLogMeta.cur.Format(c.DateTimeLogLayout.Layout))
+
 	err := c.openFile(file)
 	gobase.TrueF(err == nil, "openFile(%s) failed. err=%v", file, err)
 
@@ -209,7 +223,7 @@ func (c *Consumer) getNextFile() []nxtFile {
 		if nxt.After(time.Now()) {
 			break
 		}
-		name := nxt.Format(c.DateTimeLogLayout.Layout)
+		name := c.DateTimeLogLayout.formatFile(nxt)
 		f = append(f, nxtFile{Name: name, Ts: nxt})
 	}
 
