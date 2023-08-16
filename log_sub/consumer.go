@@ -32,7 +32,7 @@ type DateTimeLayout struct {
 	Layout   string // e.g. 20060102.log
 }
 
-func (dt *DateTimeLayout) formatFile(t time.Time) string {
+func (dt *DateTimeLayout) FormatFile(t time.Time) string {
 	return t.Format(filepath.Join(dt.filePath(), dt.Layout))
 }
 
@@ -83,7 +83,7 @@ func NewConsumer(config Config) (*Consumer, error) {
 	now := time.Now()
 	if config.Location == nil {
 		config.Location = &SeekInfo{
-			FileName: config.DateTimeLogLayout.formatFile(now),
+			FileName: config.DateTimeLogLayout.FormatFile(now),
 			Offset:   0,
 			Whence:   0,
 		}
@@ -223,7 +223,7 @@ func (c *Consumer) getNextFile() []nxtFile {
 		if nxt.After(time.Now()) {
 			break
 		}
-		name := c.DateTimeLogLayout.formatFile(nxt)
+		name := c.DateTimeLogLayout.FormatFile(nxt)
 		f = append(f, nxtFile{Name: name, Ts: nxt})
 	}
 
