@@ -108,8 +108,9 @@ func NewConsumer(config Config) (*Consumer, error) {
 }
 
 func (c *Consumer) startConsume() {
-	err := c.openFile(c.curDateTimeLogMeta.cur.Format(c.DateTimeLogLayout.Layout))
-	gobase.True(err == nil)
+	file := c.curDateTimeLogMeta.cur.Format(c.DateTimeLogLayout.Layout)
+	err := c.openFile(file)
+	gobase.TrueF(err == nil, "openFile(%s) failed. err=%v", file, err)
 
 	if c.Location != nil {
 		_, err = c.file.Seek(c.Location.Offset, c.Location.Whence)
