@@ -33,7 +33,7 @@ type DateTimeLayout struct {
 }
 
 func (dt *DateTimeLayout) FormatFile(t time.Time) string {
-	return t.Format(filepath.Join(dt.filePath(), dt.Layout))
+	return filepath.Join(dt.filePath(), t.Format(dt.Layout))
 }
 
 func (dt *DateTimeLayout) filePath() string {
