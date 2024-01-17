@@ -21,3 +21,11 @@ func RemoveAnyFromSlice(src []interface{}, elem interface{}) []interface{} {
 	}
 	return src[:i]
 }
+
+func ConvertSlice[T any, R any](s []T, f func(T) R) []R {
+	result := make([]R, len(s), len(s))
+	for i, v := range s {
+		result[i] = f(v)
+	}
+	return result
+}
