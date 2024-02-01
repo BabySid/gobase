@@ -22,6 +22,6 @@ func CopyField(dst any, src any, fields ...string) {
 
 		TrueF(dField.IsValid() && sField.IsValid(), "invalid field: %s", item)
 
-		dField.Set(sField.FieldByName(item))
+		dField.Set(sField)
 	}
 }
