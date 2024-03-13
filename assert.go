@@ -26,6 +26,9 @@ func FalseF(cond bool, format string, a ...interface{}) {
 	TrueF(!cond, format, a...)
 }
 
-func AssertHere() {
-	TrueF(false, "CANNOT run here")
+func AssertHere(a ...interface{}) {
+	if len(a) == 0 {
+		TrueF(false, "CANNOT run here")
+	}
+	TrueF(false, "CANNOT run here", a...)
 }
