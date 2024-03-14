@@ -3,12 +3,13 @@ package log_sub
 import (
 	"bufio"
 	"errors"
-	"github.com/BabySid/gobase"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/BabySid/gobase"
 )
 
 type LineMeta struct {
@@ -186,18 +187,29 @@ func (c *Consumer) sendLine(line string, err error) {
 	c.Lines <- &Line{Text: line, Err: err, Meta: LineMeta{FileName: c.file.Name()}}
 }
 
+// readLine read a line unless meet a '\n' or some error except io.EOF
 func (c *Consumer) readLine() (string, error) {
-	line, err := c.reader.ReadString('\n')
-	if err != nil {
-		// Note ReadString "returns the data read before the error" in
-		// case of an error, including EOF, so we return it as is. The
-		// caller is expected to process it if err is EOF.
-		return line, err
+	var line string
+	for {
+		str, err := c.reader.ReadString('\n')
+		line += str
+		if err != nil {
+			// Note ReadString "returns the data read before the error" in
+			// case of an error, including EOF, so we return it as is. The
+			// caller is expected to process it if err is EOF.
+			if err == io.EOF {
+				if !strings.HasSuffix(line, "\n") {
+					continue
+				}
+			}
+			return line, err
+		}
+		break
 	}
 
 	line = strings.TrimRight(line, "\n")
 
-	return line, err
+	return line, nil
 }
 
 func (c *Consumer) openReader() {
