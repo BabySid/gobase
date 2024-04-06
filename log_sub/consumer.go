@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"errors"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/BabySid/gobase"
+	mylog "github.com/BabySid/gobase/log"
 )
 
 type LineMeta struct {
@@ -45,7 +47,7 @@ type Config struct {
 	Location          *SeekInfo // if nil it will consumer log from cur time
 	DateTimeLogLayout *DateTimeLayout
 
-	Logger gobase.Logger
+	Logger *mylog.SLogger
 }
 
 const (
@@ -74,7 +76,7 @@ const (
 
 func NewConsumer(config Config) (*Consumer, error) {
 	if config.Logger == nil {
-		config.Logger = &gobase.StdErrLogger{}
+		config.Logger = mylog.NewSLogger(mylog.WithOutFile(mylog.StdErr))
 	}
 
 	if config.DateTimeLogLayout == nil {
@@ -112,7 +114,7 @@ func NewConsumer(config Config) (*Consumer, error) {
 		reader:             nil,
 	}
 
-	c.Logger.Infof("Consumer.curDateTimeLogMeta: cur=%s, step=%d", gobase.FormatTimeStamp(meta.cur.Unix()), step)
+	c.Logger.Info("Consumer.curDateTimeLogMeta", slog.String("cur", gobase.FormatTimeStamp(meta.cur.Unix())), slog.Int("step", step))
 
 	go c.startConsume()
 
@@ -150,7 +152,7 @@ func (c *Consumer) startConsume() {
 				return
 			}
 
-			c.Logger.Infof("waitFileChanges. nextFile=%s", nxt)
+			c.Logger.Info("waitFileChanges", slog.String("nextFile", nxt.Name))
 			if nxt.Name != c.file.Name() {
 				err = c.openFile(nxt.Name)
 				gobase.True(err == nil)
@@ -256,7 +258,7 @@ func (c *Consumer) openFile(fName string) error {
 
 	c.openReader()
 
-	c.Logger.Infof("openFile(%s) successful", c.file.Name())
+	c.Logger.Info("openFile successful", slog.String("fileName", c.file.Name()))
 	return nil
 }
 
@@ -270,21 +272,21 @@ func (c *Consumer) waitNxtFile() (nxtFile, error) {
 		time.Sleep(time.Second)
 
 		newFiles := c.getNextFile()
-		c.Logger.Infof("getNextFile %v", gobase.AbbreviateArray(newFiles))
+		c.Logger.Info("getNextFile", slog.Any("name", gobase.AbbreviateArray(newFiles)))
 
 		var newFile nxtFile
 		for _, f := range newFiles {
 			_, err := os.Stat(f.Name)
 			if err == nil {
 				newFile = f
-				c.Logger.Infof("newFile(%s) from getNextFile exist", newFile)
+				c.Logger.Info("newFile from getNextFile exist", slog.String("name", newFile.Name))
 				break
 			}
 		}
 
 		latest, err := os.Stat(c.file.Name())
 		if err != nil {
-			c.Logger.Warnf("os.Stat(%s) encounter an error=%v", c.file.Name(), err)
+			c.Logger.Warn("os.Stat encounter an error", slog.String("name", c.file.Name()), slog.Any("err", err))
 			return nxtFile{}, err
 		}
 

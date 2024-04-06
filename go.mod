@@ -1,6 +1,6 @@
 module github.com/BabySid/gobase
 
-go 1.19
+go 1.21
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
@@ -12,8 +12,15 @@ require (
 )
 
 require (
+	github.com/jonboulle/clockwork v0.4.0 // indirect
+	github.com/lestrrat-go/strftime v1.0.6 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+)
+
+require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
