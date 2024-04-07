@@ -47,7 +47,7 @@ type Config struct {
 	Location          *SeekInfo // if nil it will consumer log from cur time
 	DateTimeLogLayout *DateTimeLayout
 
-	Logger *mylog.SLogger
+	Logger mylog.Logger
 }
 
 const (
