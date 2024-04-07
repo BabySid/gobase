@@ -233,10 +233,10 @@ func (d *SLogger) SetLevel(level slog.Level) {
 	d.opt.level.Set(level)
 }
 
-func (d *SLogger) OutWriter() io.Writer {
-	return d.outWriter
+func (d *SLogger) OutLogger() *slog.Logger {
+	return d.out
 }
 
-func (d *SLogger) ErrWriter() io.Writer {
-	return d.errWriter
+func (d *SLogger) ErrLogger() *slog.Logger {
+	return d.err
 }
