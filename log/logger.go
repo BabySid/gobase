@@ -118,6 +118,10 @@ func WithLevel(lvl string) Option {
 
 type SLogger struct {
 	opt option
+
+	outWriter io.Writer
+	errWriter io.Writer
+
 	out *slog.Logger
 	err *slog.Logger
 }
@@ -129,10 +133,10 @@ func NewSLogger(opts ...Option) *SLogger {
 		opt(&log.opt)
 	}
 
-	outWriter := log.getWriter(log.opt.outFile)
-	errWriter := log.getWriter(log.opt.errFile)
+	log.outWriter = log.getWriter(log.opt.outFile)
+	log.errWriter = log.getWriter(log.opt.errFile)
 
-	gobase.TrueF(outWriter != nil || errWriter != nil, "outFile or errFile must be set at least one")
+	gobase.TrueF(log.outWriter != nil || log.errWriter != nil, "outFile or errFile must be set at least one")
 
 	slogOpt := slog.HandlerOptions{
 		AddSource: true,
@@ -150,8 +154,8 @@ func NewSLogger(opts ...Option) *SLogger {
 		},
 	}
 
-	log.out = log.getSlogger(outWriter, &slogOpt)
-	log.err = log.getSlogger(errWriter, &slogOpt)
+	log.out = log.getSlogger(log.outWriter, &slogOpt)
+	log.err = log.getSlogger(log.errWriter, &slogOpt)
 
 	log.out = gobase.GetNotNil(log.out, log.err)
 	log.err = gobase.GetNotNil(log.err, log.out)
@@ -227,4 +231,12 @@ func (d *SLogger) Error(msg string, attrs ...slog.Attr) {
 // SetLevel implements Logger.
 func (d *SLogger) SetLevel(level slog.Level) {
 	d.opt.level.Set(level)
+}
+
+func (d *SLogger) OutWriter() io.Writer {
+	return d.outWriter
+}
+
+func (d *SLogger) ErrWriter() io.Writer {
+	return d.errWriter
 }
