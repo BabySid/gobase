@@ -20,6 +20,9 @@ type Logger interface {
 	Warn(msg string, attrs ...slog.Attr)
 	Error(msg string, attrs ...slog.Attr)
 	SetLevel(level slog.Level)
+
+	OutLogger() *slog.Logger
+	ErrLogger() *slog.Logger
 }
 
 var _ Logger = (*SLogger)(nil)
