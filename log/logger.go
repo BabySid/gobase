@@ -21,8 +21,8 @@ type Logger interface {
 	Error(msg string, attrs ...slog.Attr)
 	SetLevel(level slog.Level)
 
-	OutLogger() *slog.Logger
-	ErrLogger() *slog.Logger
+	WithOut(attrs ...slog.Attr) Logger
+	WithErr(attrs ...slog.Attr) Logger
 }
 
 var _ Logger = (*SLogger)(nil)
@@ -49,7 +49,9 @@ type option struct {
 	outFile string
 	errFile string
 
-	level slog.LevelVar
+	level *slog.LevelVar
+
+	skipCaller int
 
 	json         bool
 	rotateByTime *rotateByTime
@@ -90,6 +92,12 @@ func WithJsonFormat() Option {
 	}
 }
 
+func WithSkipCaller(skip int) Option {
+	return func(opt *option) {
+		opt.skipCaller = skip
+	}
+}
+
 func WithTimeRotate(pattern string, maxAge time.Duration, rotateTime time.Duration) Option {
 	return func(opt *option) {
 		opt.rotateByTime = &rotateByTime{}
@@ -125,12 +133,17 @@ type SLogger struct {
 	outWriter io.Writer
 	errWriter io.Writer
 
-	out *slog.Logger
-	err *slog.Logger
+	slogOpt slog.HandlerOptions
+	out     *slog.Logger
+	err     *slog.Logger
 }
 
 func NewSLogger(opts ...Option) *SLogger {
-	log := SLogger{}
+	log := SLogger{
+		opt: option{
+			level: &slog.LevelVar{},
+		},
+	}
 
 	for _, opt := range opts {
 		opt(&log.opt)
@@ -138,12 +151,15 @@ func NewSLogger(opts ...Option) *SLogger {
 
 	log.outWriter = log.getWriter(log.opt.outFile)
 	log.errWriter = log.getWriter(log.opt.errFile)
-
 	gobase.TrueF(log.outWriter != nil || log.errWriter != nil, "outFile or errFile must be set at least one")
 
-	slogOpt := slog.HandlerOptions{
+	log.outWriter = gobase.GetNotNil(log.outWriter, log.errWriter)
+	log.errWriter = gobase.GetNotNil(log.errWriter, log.outWriter)
+	gobase.TrueF(log.outWriter != nil && log.errWriter != nil, "log.outWriter=%v log.errWriter=%v", log.outWriter, log.errWriter)
+
+	log.slogOpt = slog.HandlerOptions{
 		AddSource: true,
-		Level:     &log.opt.level,
+		Level:     log.opt.level,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.LevelKey {
 				level := a.Value.Any().(slog.Level)
@@ -157,26 +173,21 @@ func NewSLogger(opts ...Option) *SLogger {
 		},
 	}
 
-	log.out = log.getSlogger(log.outWriter, &slogOpt)
-	log.err = log.getSlogger(log.errWriter, &slogOpt)
+	log.out = log.getSlogger(log.outWriter)
+	log.err = log.getSlogger(log.errWriter)
 
-	log.out = gobase.GetNotNil(log.out, log.err)
-	log.err = gobase.GetNotNil(log.err, log.out)
 	gobase.TrueF(log.out != nil && log.err != nil, "log.out=%v log.err=%v", log.out, log.err)
 
 	return &log
 }
 
-func (d *SLogger) getSlogger(out io.Writer, opt *slog.HandlerOptions) *slog.Logger {
+func (d *SLogger) getSlogger(out io.Writer, attrs ...slog.Attr) *slog.Logger {
 	if out != nil {
-		var handler slog.Handler = &textHandler{
-			slog.NewTextHandler(out, opt),
+		var handler slog.Handler = newLogHandler(d.opt.json, d.opt.skipCaller, out, &d.slogOpt)
+		if len(attrs) > 0 {
+			handler = handler.WithAttrs(attrs)
 		}
-		if d.opt.json {
-			handler = &jsonHandler{
-				slog.NewJSONHandler(out, opt),
-			}
-		}
+
 		return slog.New(handler)
 	}
 	return nil
@@ -236,10 +247,29 @@ func (d *SLogger) SetLevel(level slog.Level) {
 	d.opt.level.Set(level)
 }
 
-func (d *SLogger) OutLogger() *slog.Logger {
-	return d.out
+func (d *SLogger) WithOut(attrs ...slog.Attr) Logger {
+	if len(attrs) == 0 {
+		return d
+	}
+
+	n := d.clone()
+	n.out = n.getSlogger(n.outWriter, attrs...)
+	gobase.TrueF(n.out != nil && n.err != nil, "log.out=%v log.err=%v", n.out, n.err)
+	return n
 }
 
-func (d *SLogger) ErrLogger() *slog.Logger {
-	return d.err
+func (d *SLogger) WithErr(attrs ...slog.Attr) Logger {
+	if len(attrs) == 0 {
+		return d
+	}
+
+	n := d.clone()
+	n.err = n.getSlogger(n.errWriter, attrs...)
+	gobase.TrueF(n.out != nil && n.err != nil, "log.out=%v log.err=%v", n.out, n.err)
+	return n
+}
+
+func (d *SLogger) clone() *SLogger {
+	n := *d
+	return &n
 }

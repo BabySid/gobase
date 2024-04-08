@@ -45,5 +45,13 @@ func GetNotNil[T comparable](s ...T) T {
 func isNil[T any](t T) bool {
 	v := reflect.ValueOf(t)
 	kind := v.Kind()
-	return (kind == reflect.Ptr || kind == reflect.Interface || kind == reflect.Slice || kind == reflect.Map || kind == reflect.Chan) && v.IsNil()
+	switch kind {
+	case reflect.Chan, reflect.Map, reflect.Ptr, reflect.Slice, reflect.Interface:
+		return v.IsNil()
+	default:
+		if reflect.TypeOf(t) == nil {
+			return true
+		}
+	}
+	return false
 }

@@ -3,49 +3,30 @@ package main
 import (
 	"log/slog"
 
-	"github.com/BabySid/gobase"
 	"github.com/BabySid/gobase/log"
-	"github.com/BabySid/gobase/log_sub"
 )
 
+var l *log.SLogger
+
 func main() {
-	l := log.NewSLogger(log.WithOutFile(log.StdOut), log.WithErrFile("./err.log"), log.WithJsonFormat())
-	con, err := log_sub.NewConsumer(log_sub.Config{
-		Location: &log_sub.SeekInfo{
-			FileName: "20240314.log",
-			Offset:   0,
-			Whence:   0,
-		},
-		DateTimeLogLayout: &log_sub.DateTimeLayout{Layout: "20060102.log"},
-	})
+	l = log.NewSLogger(log.WithOutFile(log.StdOut), log.WithSkipCaller(1))
 
-	gobase.True(err == nil)
+	// info("this is a info log", slog.Int("number", 100), slog.Bool("flag", false))
+	nl := l.WithOut(slog.Int("withNum", 200), slog.String("withStr", "hello")).WithErr(slog.Int("withNum", 300), slog.String("withStr", "helloworld"))
+	nl.Info("this is a new info log with attrs")
+	nl.Warn("this is a new warn log with attrs")
 
-	run(l)
+	// l.Warn("this is a origin log")
+	run()
 
-	i := 0
-	for {
-		line := <-con.Lines
-		if line.Err != nil {
-			l.Info("got an error from consumeLog", slog.Any("err", err))
-			continue
-		}
-		v := i % 2
-		l.Info("got a line", slog.String("line", line.Text), slog.Int("counter", v))
-		if v == 0 {
-			l.Trace("there is a trace here, but donot print", slog.Int("counter", i))
-			l.SetLevel(log.LevelTrace)
-		}
-		if v == 1 {
-			l.Warn("this is a warn msg")
-		}
-		l.Warn("this is a warn msg in new line", slog.Int("counterInWarn", i))
-		l.Info("this is a info msg in new line", slog.Int("counterInInfo", i))
-		i += 1
-	}
+	info("this is a msg in nested func")
 }
 
-func run(l *log.SLogger) {
-	l.Info("this is in run()")
-	l.Info("this is in run", slog.String("key", "value"))
+func run() {
+	// l.Info("this is in run()")
+	info("this is in run")
+}
+
+func info(msg string) {
+	l.Info(msg)
 }
