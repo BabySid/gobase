@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 
+	"github.com/BabySid/gobase"
 	"github.com/BabySid/gobase/log"
 )
 
@@ -20,6 +22,8 @@ func main() {
 	run()
 
 	info("this is a msg in nested func")
+	out := gobase.Combinations([]int{1, 3, 5, 7}, 2)
+	fmt.Println(out)
 }
 
 func run() {
