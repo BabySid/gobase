@@ -55,6 +55,8 @@ type option struct {
 
 	json         bool
 	rotateByTime *rotateByTime
+
+	colorful bool
 }
 
 func defaultRotateByTime() *rotateByTime {
@@ -83,6 +85,13 @@ func WithOutFile(out string) Option {
 func WithErrFile(out string) Option {
 	return func(opt *option) {
 		opt.errFile = out
+	}
+}
+
+// 主要对txt日志有效，建议dev环境使用
+func WithColorful() Option {
+	return func(opt *option) {
+		opt.colorful = true
 	}
 }
 
@@ -141,7 +150,8 @@ type SLogger struct {
 func NewSLogger(opts ...Option) *SLogger {
 	log := SLogger{
 		opt: option{
-			level: &slog.LevelVar{},
+			level:    &slog.LevelVar{},
+			colorful: false,
 		},
 	}
 
@@ -183,6 +193,9 @@ func NewSLogger(opts ...Option) *SLogger {
 
 func (d *SLogger) getSlogger(out io.Writer, attrs ...slog.Attr) *slog.Logger {
 	if out != nil {
+		if d.opt.colorful {
+			out = newColorWriter(out, d.opt.json)
+		}
 		var handler slog.Handler = newLogHandler(d.opt.json, d.opt.skipCaller, out, &d.slogOpt)
 		if len(attrs) > 0 {
 			handler = handler.WithAttrs(attrs)
